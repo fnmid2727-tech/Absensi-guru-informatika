@@ -58,7 +58,6 @@
             -webkit-backdrop-filter: blur(12px);
         }
 
-        /* DEDICATED PRINT SHEET STYLES FOR NATIVE PRINT-TO-PDF */
         #printablePrintArea {
             display: none;
         }
@@ -114,9 +113,8 @@
                 page-break-inside: avoid !important;
             }
             @page {
-                size: A4 portrait;
-                margin: 15mm;
-            }
+            size: A4 portrait;
+            margin: 15mm;
         }
     </style>
 </head>
@@ -151,7 +149,7 @@
                     <div id="userProfileNav" class="hidden flex items-center space-x-2 pl-2 border-l border-primary-500/50">
                         <div class="text-right hidden md:block">
                             <p id="navTeacherName" class="text-sm font-semibold leading-none">Guru Informatika</p>
-                            <p id="navTeacherNip" class="text-xs text-primary-200"</p>
+                            <p id="navTeacherNip" class="text-xs text-primary-200">NIP. -</p>
                         </div>
                         <button onclick="logout()" class="p-2 rounded-lg bg-red-600/80 hover:bg-red-600 text-white transition" title="Keluar">
                             <i class="fa-solid fa-right-from-bracket"></i>
@@ -178,6 +176,10 @@
                     <button onclick="openGasModal()" class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition">
                         <i class="fa-solid fa-database text-base"></i>
                         <span>Setup Backend AppsScript</span>
+                    </button>
+                    <button onclick="fetchBackendData(true)" class="w-full flex items-center space-x-3 px-3 py-2 rounded-xl text-xs font-semibold bg-primary-500/10 text-primary-600 dark:text-primary-400 border border-primary-500/20 hover:bg-primary-500/20 transition">
+                        <i class="fa-solid fa-rotate text-sm"></i>
+                        <span>Sinkronkan Data Now</span>
                     </button>
                 </div>
             </div>
@@ -386,7 +388,6 @@
                                 <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" onchange="handleExcelImport(event)" class="hidden">
                             </label>
                             
-                            <!-- DUAL ACTION BUTTON FOR PDF -->
                             <div class="flex items-center gap-1">
                                 <button onclick="downloadDirectPDF('siswa')" class="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-l-xl text-xs font-semibold shadow transition flex items-center gap-1">
                                     <i class="fa-solid fa-file-pdf"></i>
@@ -652,26 +653,45 @@
     <div id="printablePrintArea"></div>
 
     <!-- MODALS -->
+    <!-- CUSTOM CONFIRMATION MODAL (Replaces blocked browser confirm/alert) -->
+    <div id="confirmModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="glass w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 text-center space-y-4">
+            <div class="w-14 h-14 bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 rounded-full flex items-center justify-center mx-auto text-2xl">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div>
+                <h3 id="confirmModalTitle" class="text-base font-bold text-slate-800 dark:text-white">Konfirmasi Hapus</h3>
+                <p id="confirmModalDesc" class="text-xs text-slate-500 dark:text-slate-400 mt-1">Apakah Anda yakin ingin menghapus data ini?</p>
+            </div>
+            <div class="flex justify-center gap-2 pt-2">
+                <button id="confirmCancelBtn" class="w-1/2 py-2.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold transition">Batal</button>
+                <button id="confirmOkBtn" class="w-1/2 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold transition shadow">Hapus</button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL SETUP BACKEND / CODE.GS -->
     <div id="gasModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
         <div class="glass w-full max-w-3xl rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 max-h-[90vh] flex flex-col">
             <div class="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-700">
                 <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                    <i class="fa-solid fa-code text-emerald-500"></i> Setup Google Apps Script Backend (Database)
+                    <i class="fa-solid fa-code text-emerald-500"></i> Setup Backend Google Apps Script (Database)
                 </h3>
                 <button onclick="closeGasModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
 
             <div class="flex-1 overflow-y-auto my-4 space-y-4 pr-1 text-xs text-slate-600 dark:text-slate-300">
-                <div class="p-4 bg-primary-50 dark:bg-primary-950/40 border border-primary-200 dark:border-primary-800 rounded-xl space-y-2">
-                    <p class="font-semibold text-primary-800 dark:text-primary-300">Langkah Integrasi Google Sheets:</p>
-                    <ol class="list-decimal pl-4 space-y-1">
-                        <li>Buat Google Spreadsheet baru di Google Drive Anda.</li>
-                        <li>Buka menu <b>Ekstensi > Apps Script</b>.</li>
-                        <li>Salin seluruh kode script <code>Code.gs</code> di bawah ini dan tempelkan ke editor Apps Script.</li>
-                        <li>Klik <b>Deploy > Deploy Baru</b> -> Pilih Jenis <b>Web App</b>.</li>
+                <div class="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl space-y-2">
+                    <p class="font-bold text-emerald-800 dark:text-emerald-300 text-sm">Langkah Sinkronisasi Google Sheets (Pasti Berhasil):</p>
+                    <ol class="list-decimal pl-4 space-y-1.5 leading-relaxed">
+                        <li>Buka <a href="https://sheets.google.com" target="_blank" class="text-primary-600 font-bold underline">Google Sheets</a> dan buat <b>Spreadsheet Baru</b> (nama bebas).</li>
+                        <li>Klik menu <b>Ekstensi > Apps Script</b> di bagian atas.</li>
+                        <li>Hapus seluruh isi script lama, lalu tempelkan kode <code class="bg-emerald-200 dark:bg-emerald-800 px-1 rounded">Code.gs</code> di bawah ini.</li>
+                        <li><b>Langkah Kunci:</b> Di bagian atas editor Apps Script, pilih fungsi <span class="font-bold text-emerald-700 dark:text-emerald-300 font-mono">initialSetup</span> pada dropdown fungsi, lalu klik tombol <b>Run (Jalankan)</b>.</li>
+                        <li>Setujui perizinan (*Review Permissions > Select Account > Advanced > Go to Untitled (unsafe) > Allow*).</li>
+                        <li>Klik tombol <b>Deploy > Deploy Baru</b> -> Pilih Jenis: <b>Web App</b>.</li>
                         <li>Atur <i>Execute as</i>: <b>Me</b> dan <i>Who has access</i>: <b>Anyone (Siapa Saja)</b>.</li>
-                        <li>Salin URL Web App yang dihasilkan, lalu masukkan pada kolom input URL Backend di bawah.</li>
+                        <li>Salin URL Web App yang dihasilkan, lalu masukkan pada kolom di bawah.</li>
                     </ol>
                 </div>
 
@@ -679,7 +699,7 @@
                     <label class="block font-semibold mb-1">URL Web App Google Apps Script Anda:</label>
                     <div class="flex gap-2">
                         <input type="url" id="gasUrlInput" placeholder="https://script.google.com/macros/s/.../exec" class="flex-1 p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs focus:ring-2 focus:ring-primary-500">
-                        <button onclick="saveGasUrl()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold shadow">Simpan URL</button>
+                        <button onclick="saveGasUrl()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold shadow">Simpan & Sinkronkan</button>
                     </div>
                 </div>
 
@@ -692,129 +712,12 @@
                     </div>
                     <textarea id="gasCodeTextarea" readonly class="w-full h-60 p-3 bg-slate-900 text-emerald-400 font-mono text-[11px] rounded-xl border border-slate-800 resize-none">
 // ==========================================
-// BACKEND SCRIPT ABSENSI INFORMATIKA SMPN 2 CIKIJING
+// BACKEND SCRIPT SINKRON ABSENSI INFORMATIKA SMPN 2 CIKIJING
 // Paste this code in Google Apps Script (Code.gs)
 // ==========================================
 
-function doOptions(e) {
-  var output = ContentService.createTextOutput("");
-  output.setMimeType(ContentService.MimeType.TEXT);
-  return output;
-}
-
-// OTOMATIS CARI ATAU BUAT SPREADSHEET BARU DI GOOGLE DRIVE
-function getActiveSs() {
-  var ss = null;
-  try {
-    ss = SpreadsheetApp.getActiveSpreadsheet();
-  } catch(e) {}
-
-  if (!ss) {
-    // Cari apakah sudah pernah dibuat spreadsheet dengan nama ini
-    var files = DriveApp.getFilesByName("Database Absensi & Nilai Informatika - SMPN 2 Cikijing");
-    if (files.hasNext()) {
-      ss = SpreadsheetApp.open(files.next());
-    } else {
-      // Jika belum ada, buat spreadsheet baru secara otomatis di Drive!
-      ss = SpreadsheetApp.create("Database Absensi & Nilai Informatika - SMPN 2 Cikijing");
-    }
-  }
-  return ss;
-}
-
-function doGet(e) {
-  var action = e && e.parameter ? e.parameter.action : '';
-  var ss = getActiveSs();
-  
-  if (!ss) {
-    return responseJSON({ success: false, error: 'Gagal membuat/membuka Spreadsheet.' });
-  }
-  
-  // OTOMATIS BUAT TAB SHEET & ISI DATA AWAL
-  setupSheetsIfNeeded(ss);
-  
-  if (action == 'getData') {
-    return responseJSON({
-      siswa: getSheetData(ss.getSheetByName('Siswa')),
-      absensi: getSheetData(ss.getSheetByName('Absensi')),
-      materi: getSheetData(ss.getSheetByName('Materi')),
-      nilai: getSheetData(ss.getSheetByName('Nilai')),
-      guru: getSheetData(ss.getSheetByName('Guru')),
-      spreadsheetUrl: ss.getUrl()
-    });
-  }
-  return responseJSON({ status: 'active', message: 'Backend SMPN 2 Cikijing Ready', spreadsheetUrl: ss.getUrl() });
-}
-
-function doPost(e) {
-  try {
-    var data;
-    if (e && e.postData && e.postData.contents) {
-      data = JSON.parse(e.postData.contents);
-    } else if (e && e.parameter) {
-      data = e.parameter;
-    } else {
-      data = {};
-    }
-    
-    var action = data.action;
-    var ss = getActiveSs();
-    
-    if (!ss) {
-      return responseJSON({ success: false, error: 'Spreadsheet tidak ditemukan.' });
-    }
-    
-    setupSheetsIfNeeded(ss);
-
-    if (action == 'saveAbsensi') {
-      var sh = ss.getSheetByName('Absensi');
-      if (sh) {
-        sh.appendRow([data.nis, data.nama, data.kelas, data.tanggal, data.jam, data.status]);
-      }
-      return responseJSON({ success: true, message: 'Absensi tersimpan' });
-    }
-    
-    if (action == 'syncSiswa') {
-      var sh = ss.getSheetByName('Siswa');
-      if (sh) {
-        sh.clearContents();
-        sh.appendRow(['nis', 'nama', 'kelas', 'jk']);
-        if (data.rows && data.rows.length) {
-          data.rows.forEach(function(r) {
-            sh.appendRow([r.nis, r.nama, r.kelas, r.jk]);
-          });
-        }
-      }
-      return responseJSON({ success: true, message: 'Siswa tersimpan' });
-    }
-
-    if (action == 'saveNilai') {
-      var sh = ss.getSheetByName('Nilai');
-      if (sh) {
-        var raw = sh.getDataRange().getValues();
-        var found = false;
-        for (var i = 1; i < raw.length; i++) {
-          if (raw[i][0] == data.nis) {
-            sh.getRange(i + 1, 1, 1, 7).setValues([[data.nis, data.nama, data.uh1, data.uh2, data.uh3, data.uts, data.uas]]);
-            found = true;
-            break;
-          }
-        }
-        if (!found) {
-          sh.appendRow([data.nis, data.nama, data.uh1, data.uh2, data.uh3, data.uts, data.uas]);
-        }
-      }
-      return responseJSON({ success: true, message: 'Nilai tersimpan' });
-    }
-
-    return responseJSON({ success: false, message: 'Unknown Action' });
-  } catch(err) {
-    return responseJSON({ success: false, error: err.toString() });
-  }
-}
-
-// SETUP OTOMATIS TAB & DATA AWAL GOOGLE SHEETS
-function setupSheetsIfNeeded(ss) {
+function initialSetup() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
   if (!ss) return;
   
   createTabIfNotExist(ss, 'Guru', ['nip', 'nama', 'password'], [
@@ -843,23 +746,101 @@ function setupSheetsIfNeeded(ss) {
     ['2026002', 'Siti Nur Aisyah', 90, 92, 95, 91, 94]
   ]);
 
-  // Hapus Sheet1 bawaan jika ada tab pendukung lain
   var defaultSheet = ss.getSheetByName('Sheet1') || ss.getSheetByName('Lembar1');
   if (defaultSheet && ss.getSheets().length > 1) {
     try { ss.deleteSheet(defaultSheet); } catch(e) {}
   }
 }
 
+function doGet(e) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var action = e && e.parameter ? e.parameter.action : '';
+  
+  if (!ss) {
+    return responseJSON({ success: false, error: 'Spreadsheet tidak terhubung.' });
+  }
+
+  if (action == 'getData') {
+    return responseJSON({
+      siswa: getSheetData(ss.getSheetByName('Siswa')),
+      absensi: getSheetData(ss.getSheetByName('Absensi')),
+      materi: getSheetData(ss.getSheetByName('Materi')),
+      nilai: getSheetData(ss.getSheetByName('Nilai')),
+      guru: getSheetData(ss.getSheetByName('Guru'))
+    });
+  }
+
+  return responseJSON({ status: 'active', message: 'Backend AppsScript Active' });
+}
+
+function doPost(e) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    if (!ss) return responseJSON({ success: false, error: 'Spreadsheet error' });
+    
+    var data = {};
+    if (e.postData && e.postData.contents) {
+      try { data = JSON.parse(e.postData.contents); } catch(err) { data = e.parameter; }
+    } else {
+      data = e.parameter;
+    }
+    
+    var action = data.action;
+
+    if (action === 'saveAbsensi') {
+      var sh = ss.getSheetByName('Absensi');
+      if (sh) {
+        sh.appendRow([data.nis, data.nama, data.kelas, data.tanggal, data.jam, data.status]);
+      }
+      return responseJSON({ success: true, message: 'Absensi tersimpan' });
+    }
+
+    if (action === 'saveSiswa') {
+      var sh = ss.getSheetByName('Siswa');
+      if (sh) {
+        sh.clearContents();
+        sh.appendRow(['nis', 'nama', 'kelas', 'jk']);
+        if (data.siswaList) {
+          var rows = typeof data.siswaList === 'string' ? JSON.parse(data.siswaList) : data.siswaList;
+          rows.forEach(function(r) {
+            sh.appendRow([r.nis, r.nama, r.kelas, r.jk]);
+          });
+        }
+      }
+      return responseJSON({ success: true, message: 'Siswa tersimpan' });
+    }
+
+    if (action === 'saveNilai') {
+      var sh = ss.getSheetByName('Nilai');
+      if (sh) {
+        var raw = sh.getDataRange().getValues();
+        var found = false;
+        for (var i = 1; i < raw.length; i++) {
+          if (String(raw[i][0]) === String(data.nis)) {
+            sh.getRange(i + 1, 1, 1, 7).setValues([[data.nis, data.nama, data.uh1, data.uh2, data.uh3, data.uts, data.uas]]);
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          sh.appendRow([data.nis, data.nama, data.uh1, data.uh2, data.uh3, data.uts, data.uas]);
+        }
+      }
+      return responseJSON({ success: true, message: 'Nilai tersimpan' });
+    }
+
+    return responseJSON({ success: false, message: 'Action not found' });
+  } catch(err) {
+    return responseJSON({ success: false, error: err.toString() });
+  }
+}
+
 function createTabIfNotExist(ss, name, headers, defaultRows) {
-  if (!ss) return;
   var sh = ss.getSheetByName(name);
   if (!sh) {
     sh = ss.insertSheet(name);
     sh.appendRow(headers);
-    // Format header jadi tebal
     sh.getRange(1, 1, 1, headers.length).setFontWeight("bold").setBackground("#f1f5f9");
-    
-    // Isi data awal jika disediakan
     if (defaultRows && defaultRows.length > 0) {
       defaultRows.forEach(function(row) {
         sh.appendRow(row);
@@ -1065,6 +1046,10 @@ function responseJSON(obj) {
             } else {
                 switchView('login');
             }
+
+            if (state.gasUrl) {
+                fetchBackendData(false);
+            }
         };
 
         function loadLocalData() {
@@ -1194,7 +1179,8 @@ function responseJSON(obj) {
 
         function showMainApp() {
             document.getElementById('navTeacherName').innerText = state.currentUser.nama;
-            document.getElementById('navTeacherNip').innerText = state.currentUser.nip ? `NIP. ${state.currentUser.nip}` : 'NIP. -';
+            const teacherNip = state.currentUser ? state.currentUser.nip : '-';
+            document.getElementById('navTeacherNip').innerText = `NIP. ${teacherNip}`;
             switchView('dashboard');
         }
 
@@ -1220,8 +1206,8 @@ function responseJSON(obj) {
             localStorage.setItem('smpn2_gas_url', url);
             updateBackendStatusBadge();
             closeGasModal();
-            showToast('URL Google Apps Script Berhasil Disimpan!');
-            if (url) fetchBackendData();
+            showToast('URL Backend Disimpan!');
+            if (url) fetchBackendData(true);
         }
 
         function updateBackendStatusBadge() {
@@ -1239,34 +1225,46 @@ function responseJSON(obj) {
             const codeArea = document.getElementById('gasCodeTextarea');
             codeArea.select();
             document.execCommand('copy');
-            showToast('Kode Code.gs berhasil disalin ke clipboard!');
+            showToast('Kode Code.gs berhasil disalin!');
         }
 
-        async function fetchBackendData() {
+        async function fetchBackendData(userTriggered = false) {
             if (!state.gasUrl) return;
             try {
+                if (userTriggered) showToast('Menghubungkan ke Google Sheets...');
                 const res = await fetch(`${state.gasUrl}?action=getData`);
                 const data = await res.json();
+                
                 if (data.siswa && data.siswa.length) state.siswaList = data.siswa;
                 if (data.absensi && data.absensi.length) state.absensiLogs = data.absensi;
                 if (data.nilai && data.nilai.length) state.nilaiList = data.nilai;
+                if (data.materi && data.materi.length) state.materiList = data.materi;
+                
                 saveDataLocal();
+                switchView('dashboard');
+                if (userTriggered) showToast('Data Berhasil Disinkronkan!');
             } catch (err) {
-                console.warn('Backend sync failed, using local storage.');
+                console.warn('Backend sync failed, fallback to local storage.');
+                if (userTriggered) showToast('Gagal terhubung. Menggunakan data lokal.');
             }
         }
 
-        async function pushAbsensiToGAS(absensiObj) {
+        async function postToBackend(payload) {
             if (!state.gasUrl) return;
             try {
+                const formData = new URLSearchParams();
+                for (const key in payload) {
+                    formData.append(key, typeof payload[key] === 'object' ? JSON.stringify(payload[key]) : payload[key]);
+                }
+
                 await fetch(state.gasUrl, {
                     method: 'POST',
                     mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'saveAbsensi', ...absensiObj })
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData.toString()
                 });
             } catch(e) {
-                console.error(e);
+                console.error("Gagal sinkron backend:", e);
             }
         }
 
@@ -1339,6 +1337,7 @@ function responseJSON(obj) {
             }
 
             const newRecord = {
+                action: 'saveAbsensi',
                 nis: student.nis,
                 nama: student.nama,
                 kelas: student.kelas,
@@ -1349,7 +1348,7 @@ function responseJSON(obj) {
 
             state.absensiLogs.unshift(newRecord);
             saveDataLocal();
-            pushAbsensiToGAS(newRecord);
+            postToBackend(newRecord);
 
             showFeedback('success', 'Berhasil Absen!', `${student.nama} (${student.kelas}) | ${nowTime} WIB`);
             playAudioFeedback('success');
@@ -1565,18 +1564,39 @@ function responseJSON(obj) {
             }
 
             saveDataLocal();
+            syncSiswaToBackend();
             renderSiswaTable();
             closeSiswaModal();
             showToast('Data siswa berhasil disimpan!');
         }
 
+        function syncSiswaToBackend() {
+            postToBackend({
+                action: 'saveSiswa',
+                siswaList: state.siswaList
+            });
+        }
+
         function deleteSiswa(nis) {
-            if (confirm(`Apakah Anda yakin ingin menghapus siswa NIS ${nis}?`)) {
-                state.siswaList = state.siswaList.filter(s => s.nis !== nis);
-                saveDataLocal();
-                renderSiswaTable();
-                showToast('Data siswa berhasil dihapus.');
-            }
+            const student = state.siswaList.find(s => s.nis === nis);
+            const studentName = student ? student.nama : nis;
+            
+            showCustomConfirm(
+                'Hapus Data Siswa',
+                `Apakah Anda yakin ingin menghapus siswa ${studentName} (NIS: ${nis})?`,
+                function() {
+                    state.siswaList = state.siswaList.filter(s => s.nis !== nis);
+                    // Juga hapus data nilai & absensi terkait siswa tersebut
+                    state.nilaiList = state.nilaiList.filter(n => n.nis !== nis);
+                    state.absensiLogs = state.absensiLogs.filter(a => a.nis !== nis);
+                    
+                    saveDataLocal();
+                    syncSiswaToBackend();
+                    renderSiswaTable();
+                    renderDashboard();
+                    showToast(`Siswa ${studentName} berhasil dihapus.`);
+                }
+            );
         }
 
         function handleExcelImport(event) {
@@ -1609,6 +1629,7 @@ function responseJSON(obj) {
                 });
 
                 saveDataLocal();
+                postToBackend({ action: 'saveSiswa', siswaList: state.siswaList });
                 renderSiswaTable();
                 showToast(`Berhasil mengimpor ${count} siswa dari Excel!`);
             };
@@ -1658,6 +1679,8 @@ function responseJSON(obj) {
             if (!student) return;
 
             let logIndex = state.absensiLogs.findIndex(a => a.nis === nis && a.tanggal === dateStr);
+            const nowTime = getCurrentTimeString();
+
             if (logIndex !== -1) {
                 state.absensiLogs[logIndex].status = newStatus;
             } else {
@@ -1666,12 +1689,22 @@ function responseJSON(obj) {
                     nama: student.nama,
                     kelas: student.kelas,
                     tanggal: dateStr,
-                    jam: getCurrentTimeString(),
+                    jam: nowTime,
                     status: newStatus
                 });
             }
 
             saveDataLocal();
+            postToBackend({
+                action: 'saveAbsensi',
+                nis: student.nis,
+                nama: student.nama,
+                kelas: student.kelas,
+                tanggal: dateStr,
+                jam: nowTime,
+                status: newStatus
+            });
+
             renderEditAbsensiTable();
             showToast(`Status presensi ${student.nama} diperbarui ke ${newStatus}`);
         }
@@ -1751,7 +1784,6 @@ function responseJSON(obj) {
             const teacherName = state.currentUser ? state.currentUser.nama : 'Guru Mata Pelajaran';
             const teacherNip = state.currentUser ? state.currentUser.nip : '-';
 
-            // Add Standard Official Header (Kop Surat)
             doc.setFont('times', 'bold');
             doc.setFontSize(10);
             doc.text('PEMERINTAH KABUPATEN MAJALENGKA', 105, 12, { align: 'center' });
@@ -1826,12 +1858,10 @@ function responseJSON(obj) {
                 }
             });
 
-            // Signatures at end
             const finalY = doc.lastAutoTable.finalY + 12;
             doc.setFont('times', 'normal');
             doc.setFontSize(9);
             
-            // Left signature: Principal
             doc.text('Mengetahui,', 25, finalY);
             doc.text('Kepala SMPN 2 Cikijing', 25, finalY + 4);
             doc.setFont('times', 'bold');
@@ -1839,13 +1869,12 @@ function responseJSON(obj) {
             doc.setFont('times', 'normal');
             doc.text('NIP. 119710522 119512 2 001', 25, finalY + 26);
 
-            // Right signature: Subject Teacher
             doc.text(`Cikijing, ${dateTodayStr}`, 140, finalY);
             doc.text('Guru Informatika', 140, finalY + 4);
             doc.setFont('times', 'bold');
             doc.text(teacherName, 140, finalY + 22);
             doc.setFont('times', 'normal');
-            doc.text('NIP. -', 140, finalY + 26);
+            doc.text(`NIP. ${teacherNip}`, 140, finalY + 26);
 
             doc.save(filename);
             showToast(`PDF ${filename} berhasil diunduh!`);
@@ -1856,6 +1885,8 @@ function responseJSON(obj) {
         function triggerPrintPDF(type) {
             const printContainer = document.getElementById('printablePrintArea');
             printContainer.innerHTML = '';
+
+            const teacherNip = state.currentUser ? state.currentUser.nip : '-';
 
             const kopHeaderHTML = `
                 <div style="border-bottom: 2px solid #000; padding-bottom: 5px; margin-bottom: 12px; text-align: center;">
@@ -1879,7 +1910,7 @@ function responseJSON(obj) {
                         <p style="margin:0;">Guru Informatika</p>
                         <br><br><br>
                         <p style="margin:0; font-weight: bold; text-decoration: underline;">${state.currentUser ? state.currentUser.nama : 'Guru Informatika'}</p>
-                        <p style="margin:0; font-size: 9pt;">NIP. -</p>
+                        <p style="margin:0; font-size: 9pt;">NIP. ${teacherNip}</p>
                     </div>
                 </div>
             `;
@@ -2103,9 +2134,19 @@ function responseJSON(obj) {
         }
 
         function deleteMateri(id) {
-            state.materiList = state.materiList.filter(m => m.id !== id);
-            saveDataLocal();
-            renderMateriGrid();
+            const item = state.materiList.find(m => m.id === id);
+            const title = item ? item.judul : 'Materi';
+
+            showCustomConfirm(
+                'Hapus Materi',
+                `Apakah Anda yakin ingin menghapus materi "${title}"?`,
+                function() {
+                    state.materiList = state.materiList.filter(m => m.id !== id);
+                    saveDataLocal();
+                    renderMateriGrid();
+                    showToast('Materi berhasil dihapus.');
+                }
+            );
         }
 
         // NILAI
@@ -2167,6 +2208,7 @@ function responseJSON(obj) {
             const student = state.siswaList.find(s => s.nis === nis);
 
             const record = {
+                action: 'saveNilai',
                 nis: nis,
                 nama: student ? student.nama : '',
                 uh1: Number(document.getElementById('nilaiUh1').value) || 0,
@@ -2184,6 +2226,8 @@ function responseJSON(obj) {
             }
 
             saveDataLocal();
+            postToBackend(record);
+
             renderNilaiTable();
             closeNilaiModal();
             showToast('Nilai berhasil disimpan!');
@@ -2286,6 +2330,29 @@ function responseJSON(obj) {
             } else {
                 darkIcon.className = 'fa-solid fa-moon text-lg';
             }
+        }
+
+        function showCustomConfirm(title, desc, onOk) {
+            const modal = document.getElementById('confirmModal');
+            document.getElementById('confirmModalTitle').innerText = title;
+            document.getElementById('confirmModalDesc').innerText = desc;
+            
+            const cancelBtn = document.getElementById('confirmCancelBtn');
+            const okBtn = document.getElementById('confirmOkBtn');
+
+            modal.classList.remove('hidden');
+
+            const cleanup = () => {
+                modal.classList.add('hidden');
+                cancelBtn.onclick = null;
+                okBtn.onclick = null;
+            };
+
+            cancelBtn.onclick = () => cleanup();
+            okBtn.onclick = () => {
+                cleanup();
+                if (typeof onOk === 'function') onOk();
+            };
         }
 
         function showToast(msg) {
